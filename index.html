@@ -295,30 +295,84 @@
   </div>
 
   <script>
-    // Sample World Cup 2026 matches (group stage + knockouts)
-    const matches = [
-      // Group A
-      { id: 1, home: 'USA', away: 'Netherlands', time: '2026-06-20 20:00', score: '2-1', status: 'completed', minute: '90' },
-      { id: 2, home: 'England', away: 'Iran', time: '2026-06-21 14:00', score: null, status: 'scheduled', minute: null },
-      { id: 3, home: 'Germany', away: 'Mexico', time: '2026-06-21 17:00', score: null, status: 'scheduled', minute: null },
-      { id: 4, home: 'Spain', away: 'Costa Rica', time: '2026-06-22 14:00', score: null, status: 'scheduled', minute: null },
+    // ⚠️ SETUP: Get free API key from api-football.com and replace 'YOUR_API_KEY' below
+    const API_KEY = 'YOUR_API_KEY'; // Sign up at https://www.api-football.com/ for free tier
+    const API_BASE = 'https://v3.football.api-sports.io';
+    const WORLD_CUP_ID = 1; // World Cup league ID
 
-      // Group B
-      { id: 5, home: 'Argentina', away: 'Saudi Arabia', time: '2026-06-22 17:00', score: null, status: 'scheduled', minute: null },
-      { id: 6, home: 'France', away: 'Australia', time: '2026-06-22 20:00', score: null, status: 'scheduled', minute: null },
-      { id: 7, home: 'Brazil', away: 'Serbia', time: '2026-06-23 14:00', score: null, status: 'scheduled', minute: null },
-      { id: 8, home: 'Switzerland', away: 'Cameroon', time: '2026-06-23 17:00', score: null, status: 'scheduled', minute: null },
-    ];
+    let matches = [];
+    let stats = {
+      yellowCards: 0,
+      redCards: 0,
+      penalties: 0,
+      totalGoals: 0,
+      topScorers: [],
+      fastestGoal: null,
+    };
+
+    // Fetch World Cup matches via API
+    async function fetchMatchesAPI() {
+      try {
+        const response = await fetch(`${API_BASE}/fixtures?league=${WORLD_CUP_ID}&season=2026`, {
+          headers: { 'x-apisports-key': API_KEY }
+        });
+        const data = await response.json();
+
+        if (data.response && data.response.length > 0) {
+          matches = data.response.map(fixture => ({
+            id: fixture.fixture.id,
+            home: fixture.teams.home.name,
+            away: fixture.teams.away.name,
+            time: fixture.fixture.date,
+            score: fixture.goals.home !== null ? `${fixture.goals.home}-${fixture.goals.away}` : null,
+            status: fixture.fixture.status.short === 'NS' ? 'scheduled' : (fixture.fixture.status.short === 'LIVE' ? 'live' : 'completed'),
+            minute: fixture.fixture.status.elapsed || 0,
+          }));
+
+          renderBracket();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.log('API error — using sample data');
+        return false;
+      }
+    }
+
+    // Load sample data when API is not configured
+    function loadSampleData() {
+      matches = [
+        { id: 1, home: 'USA', away: 'Netherlands', time: '2026-06-20 20:00', score: '2-1', status: 'completed', minute: '90' },
+        { id: 2, home: 'England', away: 'Iran', time: '2026-06-21 14:00', score: null, status: 'scheduled', minute: null },
+        { id: 3, home: 'Germany', away: 'Mexico', time: '2026-06-21 17:00', score: null, status: 'scheduled', minute: null },
+        { id: 4, home: 'Spain', away: 'Costa Rica', time: '2026-06-22 14:00', score: null, status: 'scheduled', minute: null },
+        { id: 5, home: 'Argentina', away: 'Saudi Arabia', time: '2026-06-22 17:00', score: null, status: 'scheduled', minute: null },
+        { id: 6, home: 'France', away: 'Australia', time: '2026-06-22 20:00', score: null, status: 'scheduled', minute: null },
+        { id: 7, home: 'Brazil', away: 'Serbia', time: '2026-06-23 14:00', score: null, status: 'scheduled', minute: null },
+        { id: 8, home: 'Switzerland', away: 'Cameroon', time: '2026-06-23 17:00', score: null, status: 'scheduled', minute: null },
+      ];
+      stats = {
+        yellowCards: 24,
+        redCards: 2,
+        penalties: 3,
+        totalGoals: 18,
+        topScorers: [
+          { name: 'Haaland', goals: 3, team: 'Norway' },
+          { name: 'Mbappé', goals: 2, team: 'France' },
+        ],
+        fastestGoal: '13 seconds - Mount (England vs Iran)',
+      };
+      renderBracket();
+    }
 
     const newsItems = [
-      "Messi prepares for final World Cup campaign",
-      "Haaland aims for Golden Ball award",
-      "France looks to defend title in 2026",
-      "Brazil seeking sixth World Cup trophy",
-      "Young English squad ready for tournament",
-      "Netherlands rebuilding for 2026 challenge",
-      "Argentina eyes redemption after 2022",
-      "Germany returns to World Cup contention",
+      `📊 Yellow Cards: ${stats.yellowCards}`,
+      `🔴 Red Cards: ${stats.redCards}`,
+      `⚽ Penalties: ${stats.penalties}`,
+      `🏆 Golden Boot: Haaland (3 goals)`,
+      `⚡ Fastest Goal: ${stats.fastestGoal || '14 sec'}`,
+      "🎙️ World Cup 2026 bracket and live scores",
+      "🌍 Click any match for live details",
     ];
 
     // Render matches
@@ -376,12 +430,22 @@
       liveMatch.classList.add('active');
     }
 
-    // Update news ticker
+    // Update news/stats ticker
     function updateTicker() {
       const ticker = document.getElementById('ticker');
       ticker.innerHTML = '';
 
-      const items = [...newsItems, ...newsItems]; // Double for seamless loop
+      const tickerItems = [
+        `📊 Yellow Cards: ${stats.yellowCards}`,
+        `🔴 Red Cards: ${stats.redCards}`,
+        `⚽ Penalties: ${stats.penalties}`,
+        `🏆 Golden Boot: ${stats.topScorers.length > 0 ? stats.topScorers[0].name + ' (' + stats.topScorers[0].goals + ' goals)' : 'TBD'}`,
+        `⚡ Fastest Goal: ${stats.fastestGoal || 'TBD'}`,
+        "🎙️ World Cup 2026 - Live bracket and scores",
+        "🌍 Click any match for live details",
+      ];
+
+      const items = [...tickerItems, ...tickerItems]; // Double for seamless loop
       items.forEach(news => {
         const item = document.createElement('div');
         item.className = 'ticker-item';
@@ -411,17 +475,40 @@
     }
 
     // Initialize
-    function init() {
-      renderBracket();
+    async function init() {
+      // Try API first
+      const apiSuccess = await fetchMatchesAPI();
+
+      if (!apiSuccess) {
+        // Fall back to sample data
+        loadSampleData();
+      }
+
       updateTicker();
       simulateLiveUpdates();
 
-      // Set first match as "live" for demo
-      matches[1].status = 'live';
-      matches[1].score = '1-0';
-      matches[1].minute = '45';
-      showLiveMatch(matches[1]);
+      // Show any live matches, or show first match as demo
+      const liveMatch = matches.find(m => m.status === 'live');
+      if (liveMatch) {
+        showLiveMatch(liveMatch);
+      } else if (matches.length > 0) {
+        matches[0].status = 'live';
+        matches[0].score = '1-0';
+        matches[0].minute = '45';
+        showLiveMatch(matches[0]);
+      }
+
       renderBracket();
+
+      // Auto-refresh every 30 seconds
+      setInterval(() => {
+        fetchMatchesAPI().then(success => {
+          if (success) {
+            renderBracket();
+            updateTicker();
+          }
+        });
+      }, 30000);
     }
 
     init();
