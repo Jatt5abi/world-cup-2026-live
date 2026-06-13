@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='90' fill='%23ffd700'>⚽</text></svg>">
   <title>World Cup 2026 Live</title>
   <style>
     :root {
@@ -303,7 +305,7 @@
     // ⚠️ SETUP: Get free API key from zafronix.com and replace 'YOUR_API_KEY' below
     // IMPORTANT: Never commit your real API key to GitHub!
     // Sign up free at https://api.zafronix.com/ (250 requests/day, no credit card needed)
-    const API_KEY = 'YOUR_API_KEY'; // Your Zafronix API key
+    const API_KEY = 'zwc_free_4567732af16066e498ecb42b'; // Your Zafronix API key
     const API_BASE = 'https://api.zafronix.com/fifa/worldcup/v1';
 
     let matches = [];
@@ -319,20 +321,20 @@
     // Fetch World Cup matches via Zafronix API
     async function fetchMatchesAPI() {
       try {
-        const response = await fetch(`${API_BASE}/tournaments/2026`, {
+        const response = await fetch(`${API_BASE}/matches?year=2026`, {
           headers: { 'X-API-Key': API_KEY }
         });
         const data = await response.json();
 
-        if (data && data.matches && data.matches.length > 0) {
-          matches = data.matches.map(match => ({
+        if (data && data.data && data.data.length > 0) {
+          matches = data.data.map(match => ({
             id: match.id,
-            home: match.home_team,
-            away: match.away_team,
-            time: match.date || match.start_time,
-            score: match.home_score !== null && match.away_score !== null ? `${match.home_score}-${match.away_score}` : null,
-            status: match.status === 'upcoming' ? 'scheduled' : (match.status === 'live' ? 'live' : 'completed'),
-            minute: match.minute || 0,
+            home: match.homeTeam,
+            away: match.awayTeam,
+            time: match.date,
+            score: match.result && match.result !== 'null' ? match.result : null,
+            status: match.status === 'scheduled' || !match.status ? 'scheduled' : (match.status === 'live' ? 'live' : 'completed'),
+            minute: match.liveMinute || 0,
           }));
 
           renderBracket();
