@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>World Cup 2026 Live</title>
+  <style>
+    :root {
+      --bg: #0f0f1e;
+      --surface: #1a1a2e;
+      --border: #3a3a5a;
+      --gold: #ffd700;
+      --blue: #1e40af;
+      --red: #dc2626;
+      --text: #f0f0f0;
+      --text-dim: #a0a0a0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--bg) 0%, #16213e 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 15px 0;
+      border-bottom: 3px solid var(--gold);
+    }
+
+    .header h1 {
+      font-size: 3em;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(135deg, var(--gold), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+    }
+
+    .content-area {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 2fr 1.5fr;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .bracket-section {
+      background: rgba(26, 26, 46, 0.8);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    .live-section {
+      background: rgba(26, 26, 46, 0.8);
+      border: 3px solid var(--gold);
+      border-radius: 12px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      gap: 15px;
+    }
+
+    .live-match {
+      display: none;
+    }
+
+    .live-match.active {
+      display: block;
+    }
+
+    .team {
+      font-size: 2em;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .score {
+      font-size: 3.5em;
+      font-weight: 900;
+      color: var(--gold);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .live-status {
+      font-size: 0.9em;
+      color: var(--gold);
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .match-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .match-card:hover {
+      border-color: var(--gold);
+      transform: translateX(4px);
+    }
+
+    .match-card.live {
+      border-color: var(--gold);
+      border-width: 2px;
+      background: rgba(255, 215, 0, 0.05);
+    }
+
+    .match-time {
+      font-size: 0.75em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .match-teams {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 0.95em;
+    }
+
+    .match-team {
+      flex: 1;
+      text-align: left;
+    }
+
+    .match-team.away {
+      text-align: right;
+    }
+
+    .match-score {
+      font-size: 1.3em;
+      color: var(--gold);
+      font-weight: 900;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .ticker-section {
+      height: 80px;
+      background: linear-gradient(90deg, var(--blue), var(--red));
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    .ticker-content {
+      display: flex;
+      gap: 40px;
+      animation: scroll 20s linear infinite;
+      white-space: nowrap;
+      font-size: 1.1em;
+      font-weight: 600;
+    }
+
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .ticker-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+    }
+
+    .ticker-text {
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    @keyframes scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .no-data {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 40px;
+      font-size: 1.1em;
+    }
+
+    .section-title {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚽ WORLD CUP 2026</h1>
+    </div>
+
+    <div class="content-area">
+      <div class="bracket-section">
+        <div class="section-title">Tournament</div>
+        <div id="bracket" class="bracket"></div>
+      </div>
+
+      <div class="live-section">
+        <div id="noLive" class="no-data">
+          No match currently playing.<br>Next matches coming soon.
+        </div>
+        <div id="liveMatch" class="live-match">
+          <div class="live-status" id="liveStatus">● LIVE</div>
+          <div class="team" id="team1">Team 1</div>
+          <div class="score"><span id="score1">0</span> - <span id="score2">0</span></div>
+          <div class="team" id="team2">Team 2</div>
+          <div id="liveTime" style="font-size: 1.2em; color: var(--text-dim); margin-top: 10px;">Minute 45'</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker-section">
+      <div class="ticker-content" id="ticker">
+        <div class="ticker-item">
+          <div class="ticker-dot"></div>
+          <div class="ticker-text">Welcome to World Cup 2026 Live Dashboard</div>
+        </div>
+        <div class="ticker-item">
+          <div class="ticker-dot"></div>
+          <div class="ticker-text">Tournament bracket and live scores updating in real-time</div>
+        </div>
+        <div class="ticker-item">
+          <div class="ticker-dot"></div>
+          <div class="ticker-text">Click on any match to see details</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sample World Cup 2026 matches (group stage + knockouts)
+    const matches = [
+      // Group A
+      { id: 1, home: 'USA', away: 'Netherlands', time: '2026-06-20 20:00', score: '2-1', status: 'completed', minute: '90' },
+      { id: 2, home: 'England', away: 'Iran', time: '2026-06-21 14:00', score: null, status: 'scheduled', minute: null },
+      { id: 3, home: 'Germany', away: 'Mexico', time: '2026-06-21 17:00', score: null, status: 'scheduled', minute: null },
+      { id: 4, home: 'Spain', away: 'Costa Rica', time: '2026-06-22 14:00', score: null, status: 'scheduled', minute: null },
+
+      // Group B
+      { id: 5, home: 'Argentina', away: 'Saudi Arabia', time: '2026-06-22 17:00', score: null, status: 'scheduled', minute: null },
+      { id: 6, home: 'France', away: 'Australia', time: '2026-06-22 20:00', score: null, status: 'scheduled', minute: null },
+      { id: 7, home: 'Brazil', away: 'Serbia', time: '2026-06-23 14:00', score: null, status: 'scheduled', minute: null },
+      { id: 8, home: 'Switzerland', away: 'Cameroon', time: '2026-06-23 17:00', score: null, status: 'scheduled', minute: null },
+    ];
+
+    const newsItems = [
+      "Messi prepares for final World Cup campaign",
+      "Haaland aims for Golden Ball award",
+      "France looks to defend title in 2026",
+      "Brazil seeking sixth World Cup trophy",
+      "Young English squad ready for tournament",
+      "Netherlands rebuilding for 2026 challenge",
+      "Argentina eyes redemption after 2022",
+      "Germany returns to World Cup contention",
+    ];
+
+    // Render matches
+    function renderBracket() {
+      const bracket = document.getElementById('bracket');
+      bracket.innerHTML = '';
+
+      matches.forEach(match => {
+        const card = document.createElement('div');
+        card.className = `match-card ${match.status === 'live' ? 'live' : ''}`;
+        card.onclick = () => showLiveMatch(match);
+
+        const timeEl = document.createElement('div');
+        timeEl.className = 'match-time';
+        timeEl.textContent = new Date(match.time).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        const teamsEl = document.createElement('div');
+        teamsEl.className = 'match-teams';
+        teamsEl.innerHTML = `
+          <div class="match-team">${match.home}</div>
+          <div class="match-score">${match.score || '-'}</div>
+          <div class="match-team away">${match.away}</div>
+        `;
+
+        card.appendChild(timeEl);
+        card.appendChild(teamsEl);
+        bracket.appendChild(card);
+      });
+    }
+
+    // Show live match
+    function showLiveMatch(match) {
+      const liveMatch = document.getElementById('liveMatch');
+      const noLive = document.getElementById('noLive');
+
+      if (match.status === 'scheduled') {
+        noLive.style.display = 'block';
+        liveMatch.classList.remove('active');
+        return;
+      }
+
+      document.getElementById('team1').textContent = match.home;
+      document.getElementById('team2').textContent = match.away;
+      document.getElementById('liveTime').textContent = `Minute ${match.minute}'`;
+
+      if (match.score) {
+        const [s1, s2] = match.score.split('-');
+        document.getElementById('score1').textContent = s1;
+        document.getElementById('score2').textContent = s2;
+      }
+
+      noLive.style.display = 'none';
+      liveMatch.classList.add('active');
+    }
+
+    // Update news ticker
+    function updateTicker() {
+      const ticker = document.getElementById('ticker');
+      ticker.innerHTML = '';
+
+      const items = [...newsItems, ...newsItems]; // Double for seamless loop
+      items.forEach(news => {
+        const item = document.createElement('div');
+        item.className = 'ticker-item';
+        item.innerHTML = `
+          <div class="ticker-dot"></div>
+          <div class="ticker-text">${news}</div>
+        `;
+        ticker.appendChild(item);
+      });
+    }
+
+    // Simulate live match updates every 5 seconds
+    function simulateLiveUpdates() {
+      setInterval(() => {
+        // Find a "live" match and update score randomly
+        const liveMatch = matches.find(m => m.status === 'live');
+        if (liveMatch) {
+          const [s1, s2] = liveMatch.score.split('-').map(Number);
+          if (Math.random() < 0.3) {
+            liveMatch.score = (s1 + (Math.random() < 0.5 ? 1 : 0)) + '-' + (s2 + (Math.random() < 0.5 ? 1 : 0));
+            liveMatch.minute = Math.min(parseInt(liveMatch.minute) + Math.floor(Math.random() * 5) + 1, 90);
+            showLiveMatch(liveMatch);
+            renderBracket();
+          }
+        }
+      }, 5000);
+    }
+
+    // Initialize
+    function init() {
+      renderBracket();
+      updateTicker();
+      simulateLiveUpdates();
+
+      // Set first match as "live" for demo
+      matches[1].status = 'live';
+      matches[1].score = '1-0';
+      matches[1].minute = '45';
+      showLiveMatch(matches[1]);
+      renderBracket();
+    }
+
+    init();
+  </script>
+</body>
+</html>
