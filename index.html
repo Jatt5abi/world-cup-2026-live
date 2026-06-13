@@ -300,11 +300,11 @@
   </div>
 
   <script>
-    // ⚠️ SETUP: Get free API key from api-football.com and replace 'YOUR_API_KEY' below
+    // ⚠️ SETUP: Get free API key from zafronix.com and replace 'YOUR_API_KEY' below
     // IMPORTANT: Never commit your real API key to GitHub!
-    const API_KEY = 'YOUR_API_KEY'; // Sign up at https://www.api-football.com/ for free tier
-    const API_BASE = 'https://v3.football.api-sports.io';
-    const WORLD_CUP_ID = 1; // World Cup league ID
+    // Sign up free at https://api.zafronix.com/ (250 requests/day, no credit card needed)
+    const API_KEY = 'YOUR_API_KEY'; // Your Zafronix API key
+    const API_BASE = 'https://api.zafronix.com/fifa/worldcup/v1';
 
     let matches = [];
     let stats = {
@@ -316,23 +316,23 @@
       fastestGoal: null,
     };
 
-    // Fetch World Cup matches via API
+    // Fetch World Cup matches via Zafronix API
     async function fetchMatchesAPI() {
       try {
-        const response = await fetch(`${API_BASE}/fixtures?league=${WORLD_CUP_ID}&season=2026`, {
-          headers: { 'x-apisports-key': API_KEY }
+        const response = await fetch(`${API_BASE}/tournaments/2026`, {
+          headers: { 'X-API-Key': API_KEY }
         });
         const data = await response.json();
 
-        if (data.response && data.response.length > 0) {
-          matches = data.response.map(fixture => ({
-            id: fixture.fixture.id,
-            home: fixture.teams.home.name,
-            away: fixture.teams.away.name,
-            time: fixture.fixture.date,
-            score: fixture.goals.home !== null ? `${fixture.goals.home}-${fixture.goals.away}` : null,
-            status: fixture.fixture.status.short === 'NS' ? 'scheduled' : (fixture.fixture.status.short === 'LIVE' ? 'live' : 'completed'),
-            minute: fixture.fixture.status.elapsed || 0,
+        if (data && data.matches && data.matches.length > 0) {
+          matches = data.matches.map(match => ({
+            id: match.id,
+            home: match.home_team,
+            away: match.away_team,
+            time: match.date || match.start_time,
+            score: match.home_score !== null && match.away_score !== null ? `${match.home_score}-${match.away_score}` : null,
+            status: match.status === 'upcoming' ? 'scheduled' : (match.status === 'live' ? 'live' : 'completed'),
+            minute: match.minute || 0,
           }));
 
           renderBracket();
@@ -340,7 +340,7 @@
         }
         return false;
       } catch (error) {
-        console.log('API error — using sample data');
+        console.log('API error — using sample data. Error:', error.message);
         return false;
       }
     }
