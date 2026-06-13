@@ -408,6 +408,108 @@
       color: var(--text-dim);
       font-size: 0.85em;
     }
+
+    .pitch-results-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 15px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .results-panel {
+      background: rgba(26, 31, 58, 0.9);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .results-title {
+      font-size: 0.8em;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .result-item {
+      background: rgba(45, 53, 97, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.75em;
+    }
+
+    .result-date {
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-size: 0.7em;
+    }
+
+    .result-match {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .result-team {
+      flex: 1;
+      text-align: left;
+    }
+
+    .result-score {
+      color: var(--gold);
+      font-weight: 700;
+      min-width: 30px;
+      text-align: center;
+    }
+
+    .result-status {
+      font-size: 0.65em;
+      color: var(--accent);
+      padding-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .standings-item {
+      background: rgba(45, 53, 97, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.75em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .standing-team {
+      flex: 1;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .standing-stats {
+      display: flex;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .standing-pts {
+      color: var(--gold);
+      font-weight: 700;
+      min-width: 20px;
+    }
   </style>
 </head>
 <body>
@@ -445,8 +547,18 @@
           </div>
         </div>
 
-        <div class="pitch-container" id="pitchContainer">
-          <div class="pitch-empty">← Select a team from the groups</div>
+        <div class="pitch-results-row">
+          <div class="pitch-container" id="pitchContainer">
+            <div class="pitch-empty">← Select a team from the groups</div>
+          </div>
+          <div class="results-panel">
+            <div class="results-title">Results & Standings</div>
+            <div id="resultsContent">
+              <div style="text-align: center; color: var(--text-dim); padding: 20px; font-size: 0.8em;">
+                Select a team to see results
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="ticker-section">
@@ -551,6 +663,7 @@
       selectedTeam = team;
       renderGroups();
       renderFormation(team);
+      renderTeamResults(team);
     }
 
     function renderFormation(team) {
@@ -613,6 +726,91 @@
       }
 
       return positions;
+    }
+
+    function renderTeamResults(team) {
+      const resultsContent = document.getElementById('resultsContent');
+
+      // Get team's group and standings
+      let teamGroup = null;
+      for (const [group, teams] of Object.entries(groups)) {
+        if (teams.includes(team)) {
+          teamGroup = group;
+          break;
+        }
+      }
+
+      // Get team's matches
+      const teamMatches = matches.filter(m => m.home === team || m.away === team);
+      const completedMatches = teamMatches.filter(m => m.status === 'completed').slice(0, 5);
+
+      let html = '';
+
+      if (completedMatches.length > 0) {
+        html += '<div class="results-title" style="margin-top: 0;">Recent Results</div>';
+        completedMatches.forEach(match => {
+          const isHome = match.home === team;
+          const opponent = isHome ? match.away : match.home;
+          const [s1, s2] = match.result ? match.result.split('-').map(Number) : [0, 0];
+          const teamScore = isHome ? s1 : s2;
+          const oppScore = isHome ? s2 : s1;
+          const status = teamScore > oppScore ? 'W' : teamScore < oppScore ? 'L' : 'D';
+
+          html += `
+            <div class="result-item">
+              <div class="result-date">${new Date(match.time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+              <div class="result-match">
+                <div class="result-team">${isHome ? team : opponent}</div>
+                <div class="result-score">${teamScore}-${oppScore}</div>
+                <div class="result-team">${isHome ? opponent : team}</div>
+              </div>
+              <div class="result-status">${status}</div>
+            </div>
+          `;
+        });
+      }
+
+      // Group standings
+      if (teamGroup) {
+        html += '<div class="results-title" style="margin-top: 12px;">Group ' + teamGroup + '</div>';
+        const groupTeams = groups[teamGroup] || [];
+        groupTeams.forEach(t => {
+          const tMatches = matches.filter(m => (m.home === t || m.away === t) && m.status === 'completed');
+          let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+
+          tMatches.forEach(m => {
+            const isHome = m.home === t;
+            const [s1, s2] = m.result ? m.result.split('-').map(Number) : [0, 0];
+            const tScore = isHome ? s1 : s2;
+            const oScore = isHome ? s2 : s1;
+            goalsFor += tScore;
+            goalsAgainst += oScore;
+            if (tScore > oScore) wins++;
+            else if (tScore === oScore) draws++;
+            else losses++;
+          });
+
+          const pts = wins * 3 + draws;
+          html += `
+            <div class="standings-item">
+              <div class="standing-team">
+                <span>${getFlag(t)}</span>
+                <span>${t}</span>
+              </div>
+              <div class="standing-stats">
+                <span>${wins}W ${draws}D ${losses}L</span>
+                <span class="standing-pts">${pts}pts</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      if (html === '') {
+        html = '<div style="text-align: center; color: var(--text-dim); padding: 20px; font-size: 0.8em;">No data yet</div>';
+      }
+
+      resultsContent.innerHTML = html;
     }
 
     async function fetchMatches() {
